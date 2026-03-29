@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuroadapt-env"
+version = "1.0.0"
+description = "Real-world OpenEnv environment for sensory-aware adaptive tutoring"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = [
+  "openenv",
+  "adaptive-learning",
+  "autism",
+  "education",
+  "accessibility",
+  "reinforcement-learning",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Education",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn>=0.30.0",
+  "pydantic>=2.8.0",
+  "requests>=2.31.0",
+  "openai>=1.0.0",
+  "websockets>=12.0",
+  "openenv-core @ git+https://github.com/meta-pytorch/OpenEnv.git",
+]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.27.0"]
+
+[project.scripts]
+server = "server.app:main"
+
+[project.urls]
+Homepage = "https://huggingface.co/spaces/TejaswiKarasani/neuroadapt-env"
+
+[tool.setuptools]
+py-modules = ["baseline", "client", "inference", "models"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["server"]
