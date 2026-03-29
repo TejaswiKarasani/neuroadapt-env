@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NeuroAdapt — Adaptive Learning Environment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  :root {
+    --bg:        #0a0f1a;
+    --surface:   #111827;
+    --card:      #161f31;
+    --border:    #1e2d47;
+    --accent:    #38bdf8;
+    --accent2:   #34d399;
+    --warn:      #fb923c;
+    --danger:    #f87171;
+    --muted:     #4b6080;
+    --text:      #e2eaf8;
+    --subtext:   #7a9abf;
+    --serif:     'DM Serif Display', serif;
+    --sans:      'Outfit', sans-serif;
+    --mono:      'DM Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(56,189,248,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(52,211,153,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #root { position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,26,0.8);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-name {
+    font-family: var(--serif);
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-name em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .logo-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .dot.live { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); animation: pulse 2s infinite; }
+  .dot.error { background: var(--danger); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 280px;
+    gap: 0;
+    height: calc(100vh - 65px);
+  }
+
+  .panel {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .panel:last-child { border-right: none; }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* ── Task Selector ── */
+  .task-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 8px;
+    transition: all 0.15s;
+    color: var(--text);
+    font-family: var(--sans);
+  }
+
+  .task-btn:hover { border-color: var(--accent); background: rgba(56,189,248,0.05); }
+  .task-btn.active { border-color: var(--accent); background: rgba(56,189,248,0.08); }
+
+  .task-name {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+
+  .task-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+
+  .badge.easy   { background: rgba(52,211,153,0.15); color: var(--accent2); }
+  .badge.medium { background: rgba(251,146,60,0.15);  color: var(--warn); }
+  .badge.hard   { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .badge.steps  { background: rgba(75,96,128,0.3);    color: var(--subtext); }
+
+  /* ── Reset Button ── */
+  .btn-reset {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #0a0f1a;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+
+  .btn-reset:hover { background: #7dd3fc; }
+  .btn-reset:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.5; }
+
+  /* ── Metric Bars ── */
+  .metric { margin-bottom: 14px; }
+
+  .metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .metric-name {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--subtext);
+  }
+
+  .metric-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .bar-track {
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* ── Stress Waveform ── */
+  .waveform-wrap {
+    position: relative;
+    height: 70px;
+    margin: 8px 0;
+  }
+
+  .waveform-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Center Panel ── */
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+
+  /* ── Observation ── */
+  .obs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .obs-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .obs-big {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    margin: 4px 0 2px;
+  }
+
+  .obs-sub {
+    font-size: 11px;
+    color: var(--subtext);
+  }
+
+  /* ── Question Display ── */
+  .question-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .question-subject {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .question-text {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  /* ── Action Form ── */
+  .action-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .field select,
+  .field input[type="number"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .field select:focus,
+  .field input:focus { border-color: var(--accent); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: rgba(56,189,248,0.3); }
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(16px);
+    background: var(--accent);
+  }
+
+  .toggle-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--subtext);
+  }
+
+  .btn-step {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-step:hover { background: rgba(52,211,153,0.1); }
+  .btn-step:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── Reward Flash ── */
+  .reward-flash {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    margin-bottom: 12px;
+    transition: all 0.3s;
+  }
+
+  .reward-flash.positive { background: rgba(52,211,153,0.1); color: var(--accent2); border: 1px solid rgba(52,211,153,0.2); }
+  .reward-flash.negative { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+  .reward-flash.neutral  { background: var(--card); color: var(--subtext); border: 1px solid var(--border); }
+
+  /* ── Profile Hint ── */
+  .profile-hint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--subtext);
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+
+  .profile-hint strong { color: var(--accent); font-weight: 400; }
+
+  /* ── Right Panel — Trajectory ── */
+  .traj-item {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .traj-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .traj-num { color: var(--muted); }
+  .traj-reward { font-weight: 500; }
+
+  .traj-details {
+    color: var(--subtext);
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  /* ── Score Result ── */
+  .score-result {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .score-big {
+    font-family: var(--serif);
+    font-size: 52px;
+    line-height: 1;
+    margin: 8px 0;
+  }
+
+  .score-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .score-breakdown {
+    margin-top: 12px;
+    text-align: left;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--subtext);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-val { color: var(--text); }
+
+  /* ── Baseline runner ── */
+  .btn-baseline {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--subtext);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+
+  .btn-baseline:hover { border-color: var(--warn); color: var(--warn); }
+  .btn-baseline:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── Empty state ── */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .empty-icon { font-size: 28px; opacity: 0.4; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Step progress bar ── */
+  .progress-bar-outer {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .step-counter {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  /* ── Done banner ── */
+  .done-banner {
+    background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(56,189,248,0.1));
+    border: 1px solid rgba(52,211,153,0.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 1px;
+  }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Alerts ── */
+  .alert {
+    padding: 10px 12px;
+    border-radius: 7px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid;
+  }
+
+  .alert.err { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: var(--danger); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const API = window.location.origin;
+
+// ── Waveform component ──────────────────────────────────────────────── //
+function Waveform({ data, color = '#38bdf8' }) {
+  if (!data || data.length < 2) {
+    return (
+      <div style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: 1 }}>NO DATA YET</span>
+      </div>
+    );
+  }
+  const w = 240, h = 60, pad = 4;
+  const max = 1, min = 0;
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  }).join(' ');
+  const last = data[data.length - 1];
+  const lx = pad + ((data.length - 1) / (data.length - 1)) * (w - pad * 2);
+  const ly = h - pad - ((last - min) / range) * (h - pad * 2);
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="waveform-svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" points={pts} />
+      <circle cx={lx} cy={ly} r="3" fill={color} opacity="0.9" />
+    </svg>
+  );
+}
+
+// ── Metric bar ──────────────────────────────────────────────────────── //
+function MetricBar({ label, value, color = 'var(--accent)' }) {
+  const pct = Math.round((value || 0) * 100);
+  return (
+    <div className="metric">
+      <div className="metric-header">
+        <span className="metric-name">{label}</span>
+        <span className="metric-val" style={{ color }}>{pct}%</span>
+      </div>
+      <div className="bar-track">
+        <div className="bar-fill" style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Main App ────────────────────────────────────────────────────────── //
+function App() {
+  const [connected, setConnected] = useState(null);
+  const [task, setTask] = useState('easy');
+  const [sessionId] = useState(() => `ui_${Date.now()}`);
+  const [obs, setObs] = useState(null);
+  const [grader, setGrader] = useState(null);
+  const [trajectory, setTrajectory] = useState([]);
+  const [stressHistory, setStressHistory] = useState([]);
+  const [engageHistory, setEngageHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [baseline, setBaseline] = useState(null);
+  const [baselineLoading, setBaselineLoading] = useState(false);
+
+  const [action, setAction] = useState({
+    content_type: 'visual',
+    difficulty: 3,
+    pace: 'normal',
+    hint_level: 1,
+    take_break: false,
+    font_size: 16,
+    contrast_mode: 'normal',
+    animation_speed: 'slow',
+    subject: 'math',
+  });
+
+  const TASKS = [
+    { id: 'easy',   name: 'Profile Matching',           steps: 4,  desc: 'Keep engagement high, stress low' },
+    { id: 'medium', name: 'Distress Response',          steps: 7,  desc: 'Detect & recover from stress spikes' },
+    { id: 'hard',   name: 'Full Session Optimization',  steps: 12, desc: 'Maximize learning across 12 steps' },
+  ];
+
+  // Health check
+  useEffect(() => {
+    fetch(`${API}/health`)
+      .then(r => r.json())
+      .then(() => setConnected(true))
+      .catch(() => setConnected(false));
+  }, []);
+
+  const handleReset = async () => {
+    setLoading(true);
+    setError(null);
+    setGrader(null);
+    setTrajectory([]);
+    setStressHistory([]);
+    setEngageHistory([]);
+    try {
+      const r = await fetch(`${API}/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_id: task, session_id: sessionId }),
+      });
+      const data = await r.json();
+      // FIX 2: /reset returns StepResult — unwrap observation
+      const initObs = data.observation || data;
+      setObs(initObs);
+      setStressHistory([initObs.stress_signal]);
+      setEngageHistory([initObs.engagement]);
+    } catch (e) {
+      setError('Could not connect to server. Is uvicorn running?');
+    }
+    setLoading(false);
+  };
+
+  const handleStep = async () => {
+    if (!obs || obs.done) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // FIX 3: session_id in body, not query param
+      const r = await fetch(`${API}/step`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...action, session_id: sessionId }),
+      });
+      const data = await r.json();
+      setObs(data.observation);
+      setStressHistory(h => [...h, data.observation.stress_signal]);
+      setEngageHistory(h => [...h, data.observation.engagement]);
+      setTrajectory(t => [{
+        step: data.observation.step,
+        reward: data.reward,
+        done: data.done,
+        stress: data.observation.stress_signal,
+        engagement: data.observation.engagement,
+        correct: data.observation.last_correct,
+        subject: data.info?.current_subject,
+        action: { ...action },
+      }, ...t]);
+      if (data.done) {
+        // Fetch grader score
+        const gr = await fetch(`${API}/grader?session_id=${sessionId}`);
+        const grData = await gr.json();
+        setGrader(grData);
+      }
+    } catch (e) {
+      setError('Step failed. Check server.');
+    }
+    setLoading(false);
+  };
+
+  const handleBaseline = async () => {
+    setBaselineLoading(true);
+    setBaseline(null);
+    try {
+      const r = await fetch(`${API}/baseline`);
+      const data = await r.json();
+      setBaseline(data);
+    } catch (e) {
+      setError('Baseline failed.');
+    }
+    setBaselineLoading(false);
+  };
+
+  const maxSteps = TASKS.find(t => t.id === task)?.steps || 4;
+  const currentStep = obs?.step || 0;
+  const progress = (currentStep / maxSteps) * 100;
+
+  const stressColor = (v) => {
+    if (!v && v !== 0) return 'var(--subtext)';
+    if (v > 0.65) return 'var(--danger)';
+    if (v > 0.40) return 'var(--warn)';
+    return 'var(--accent2)';
+  };
+
+  const lastReward = trajectory[0]?.reward;
+  const rewardClass = lastReward === undefined ? 'neutral' : lastReward >= 0 ? 'positive' : 'negative';
+
+  // Parse profile hint
+  const parseHint = (hint) => {
+    if (!hint) return {};
+    const obj = {};
+    hint.split(',').forEach(part => {
+      const [k, v] = part.split(':');
+      if (k && v) obj[k.trim()] = parseFloat(v);
+    });
+    return obj;
+  };
+
+  const hint = parseHint(obs?.profile_hint);
+
+  return (
+    <>
+      {/* Header */}
+      <header className="header">
+        <div className="logo">
+          <span className="logo-name">Neuro<em>Adapt</em></span>
+          <span className="logo-tag">OpenEnv</span>
+        </div>
+        <div className="header-status">
+          <div className={`dot ${connected === null ? '' : connected ? 'live' : 'error'}`} />
+          {connected === null ? 'connecting...' : connected ? 'server online' : 'server offline'}
+          {obs && (
+            <span style={{ marginLeft: 12, color: 'var(--muted)' }}>
+              session: <span style={{ color: 'var(--subtext)' }}>{sessionId.slice(-8)}</span>
+            </span>
+          )}
+        </div>
+      </header>
+
+      <div className="layout">
+        {/* ── LEFT: Task + Config ── */}
+        <div className="panel">
+          <div className="panel-title">Task Selection</div>
+          {TASKS.map(t => (
+            <button
+              key={t.id}
+              className={`task-btn ${task === t.id ? 'active' : ''}`}
+              onClick={() => { setTask(t.id); setObs(null); setGrader(null); setTrajectory([]); setStressHistory([]); setEngageHistory([]); }}
+            >
+              <div className="task-name">{t.name}</div>
+              <div className="task-meta">
+                <span className={`badge ${t.id}`}>{t.id}</span>
+                <span className="badge steps">{t.steps} steps</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{t.desc}</div>
+            </button>
+          ))}
+
+          <button className="btn-reset" onClick={handleReset} disabled={loading}>
+            {loading ? <><span className="spinner" />Loading...</> : '▶ Start Episode'}
+          </button>
+
+          {/* Metrics */}
+          {obs && (
+            <div style={{ marginTop: 20 }}>
+              <div className="panel-title">Live Signals</div>
+
+              <div className="waveform-wrap">
+                <Waveform data={stressHistory} color={stressColor(obs.stress_signal)} />
+              </div>
+
+              <MetricBar label="Stress Signal" value={obs.stress_signal} color={stressColor(obs.stress_signal)} />
+              <MetricBar label="Engagement" value={obs.engagement} color="var(--accent)" />
+              <MetricBar label="Error Rate" value={obs.error_rate} color="var(--warn)" />
+              <MetricBar label="Response Time" value={obs.response_time_norm} color="var(--subtext)" />
+
+              <div className="step-counter">
+                <span>Step {currentStep} / {maxSteps}</span>
+                <span>{obs.done ? '✓ done' : `${maxSteps - currentStep} remaining`}</span>
+              </div>
+              <div className="progress-bar-outer">
+                <div className="progress-bar-inner" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          )}
+
+          {/* Baseline */}
+          <div style={{ marginTop: 20 }}>
+            <div className="panel-title">Benchmark</div>
+            <button className="btn-baseline" onClick={handleBaseline} disabled={baselineLoading}>
+              {baselineLoading ? <><span className="spinner" />Running baseline...</> : '⟳ Run Heuristic Baseline'}
+            </button>
+            {baseline && (
+              <div className="card" style={{ marginTop: 8 }}>
+                {['easy','medium','hard'].map(k => (
+                  <div key={k} className="breakdown-row">
+                    <span>{k}</span>
+                    <span className="breakdown-val" style={{ color: baseline[k] >= 0.5 ? 'var(--accent2)' : 'var(--warn)' }}>
+                      {(baseline[k] * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+                <div className="breakdown-row">
+                  <span>average</span>
+                  <span className="breakdown-val">{(baseline.average * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── CENTER: Main interaction ── */}
+        <div className="center-panel">
+          {error && <div className="alert err">{error}</div>}
+
+          {!obs ? (
+            <div className="empty">
+              <div className="empty-icon">🧠</div>
+              <div>SELECT A TASK AND PRESS START</div>
+              <div style={{ color: 'var(--border)', fontSize: 10 }}>episode will initialise</div>
+            </div>
+          ) : (
+            <>
+              {/* Current question */}
+              {obs.metadata?.current_question && (
+                <div className="question-box">
+                  <div className="question-subject">
+                    {obs.metadata.current_subject} · step {obs.step}
+                  </div>
+                  <div className="question-text">{obs.metadata.current_question}</div>
+                </div>
+              )}
+
+              {/* Done banner */}
+              {obs.done && (
+                <div className="done-banner">
+                  EPISODE COMPLETE · {obs.metadata?.termination_reason === 'overwhelmed' ? '⚠ CHILD OVERWHELMED' : '✓ MAX STEPS REACHED'}
+                </div>
+              )}
+
+              {/* Score */}
+              {grader && (
+                <div className="score-result">
+                  <div className="score-label">Final Score — {grader.task_id}</div>
+                  <div className="score-big" style={{
+                    color: grader.score >= 0.6 ? 'var(--accent2)' : grader.score >= 0.4 ? 'var(--warn)' : 'var(--danger)'
+                  }}>
+                    {(grader.score * 100).toFixed(1)}
+                    <span style={{ fontSize: 22, color: 'var(--muted)' }}>%</span>
+                  </div>
+                  <div style={{ color: grader.passed ? 'var(--accent2)' : 'var(--danger)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1 }}>
+                    {grader.passed ? '✓ PASSED' : '✗ FAILED'}
+                  </div>
+                  <div className="score-breakdown">
+                    {Object.entries(grader.breakdown || {}).map(([k, v]) => (
+                      <div key={k} className="breakdown-row">
+                        <span>{k.replace(/_/g, ' ')}</span>
+                        <span className="breakdown-val">{typeof v === 'number' ? (v * 100).toFixed(1) + '%' : v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Observation cards */}
+              <div className="obs-grid">
+                <div className="obs-card">
+                  <div className="card-label">Stress Signal</div>
+                  <div className="obs-big" style={{ color: stressColor(obs.stress_signal) }}>
+                    {(obs.stress_signal * 100).toFixed(0)}<span style={{ fontSize: 14 }}>%</span>
+                  </div>
+                  <div className="obs-sub">observed ± noise</div>
+                </div>
+                <div className="obs-card">
+                  <div className="card-label">Engagement</div>
+                  <div className="obs-big" style={{ color: 'var(--accent)' }}>
+                    {(obs.engagement * 100).toFixed(0)}<span style={{ fontSize: 14 }}>%</span>
+                  </div>
+                  <div className="obs-sub">real-time signal</div>
+                </div>
+                <div className="obs-card">
+                  <div className="card-label">Error Rate</div>
+                  <div className="obs-big" style={{ color: obs.error_rate > 0.5 ? 'var(--warn)' : 'var(--subtext)' }}>
+                    {(obs.error_rate * 100).toFixed(0)}<span style={{ fontSize: 14 }}>%</span>
+                  </div>
+                  <div className="obs-sub">last 3 steps</div>
+                </div>
+                <div className="obs-card">
+                  <div className="card-label">Last Answer</div>
+                  <div className="obs-big" style={{ color: obs.last_correct === true ? 'var(--accent2)' : obs.last_correct === false ? 'var(--danger)' : 'var(--muted)' }}>
+                    {obs.last_correct === true ? '✓' : obs.last_correct === false ? '✗' : '—'}
+                  </div>
+                  <div className="obs-sub">{obs.last_correct === null ? 'break step' : obs.last_correct === true ? 'correct' : 'incorrect'}</div>
+                </div>
+              </div>
+
+              {/* Profile hint */}
+              {obs.profile_hint && (
+                <div className="profile-hint">
+                  <strong>PROFILE HINT</strong><br />
+                  {Object.entries(hint).map(([k, v]) => (
+                    <span key={k}>
+                      {k.replace(/_/g, ' ')}: <strong>{v.toFixed(1)}</strong>{'  '}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Last reward */}
+              {lastReward !== undefined && (
+                <div className={`reward-flash ${rewardClass}`}>
+                  Last reward: <strong>{lastReward > 0 ? '+' : ''}{lastReward?.toFixed(4)}</strong>
+                  {' '}·{' '}
+                  cumulative: <strong>{trajectory.reduce((s, t) => s + t.reward, 0).toFixed(3)}</strong>
+                </div>
+              )}
+
+              {/* Action form */}
+              {!obs.done && (
+                <div className="action-form">
+                  <div className="panel-title" style={{ marginBottom: 12 }}>Choose Action</div>
+                  <div className="form-grid">
+                    <div className="field">
+                      <label>Content Type</label>
+                      <select value={action.content_type} onChange={e => setAction(a => ({ ...a, content_type: e.target.value }))}>
+                        <option>text</option>
+                        <option>visual</option>
+                        <option>audio</option>
+                        <option>mixed</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Difficulty</label>
+                      <select value={action.difficulty} onChange={e => setAction(a => ({ ...a, difficulty: +e.target.value }))}>
+                        {[1,2,3,4,5].map(n => <option key={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Subject</label>
+                      <select value={action.subject || ''} onChange={e => setAction(a => ({ ...a, subject: e.target.value || null }))}>
+                        <option value="">auto</option>
+                        <option>math</option>
+                        <option>reading</option>
+                        <option>science</option>
+                        <option>life_skills</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Pace</label>
+                      <select value={action.pace} onChange={e => setAction(a => ({ ...a, pace: e.target.value }))}>
+                        <option>slow</option>
+                        <option>normal</option>
+                        <option>fast</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Hint Level</label>
+                      <select value={action.hint_level} onChange={e => setAction(a => ({ ...a, hint_level: +e.target.value }))}>
+                        {[0,1,2,3].map(n => <option key={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Animation</label>
+                      <select value={action.animation_speed} onChange={e => setAction(a => ({ ...a, animation_speed: e.target.value }))}>
+                        <option>none</option>
+                        <option>slow</option>
+                        <option>normal</option>
+                        <option>fast</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Font Size</label>
+                      <select value={action.font_size} onChange={e => setAction(a => ({ ...a, font_size: +e.target.value }))}>
+                        {[12,14,16,18,20,22,24].map(n => <option key={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Contrast</label>
+                      <select value={action.contrast_mode} onChange={e => setAction(a => ({ ...a, contrast_mode: e.target.value }))}>
+                        <option>normal</option>
+                        <option>high</option>
+                        <option>low</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="toggle-row">
+                    <label className="toggle">
+                      <input type="checkbox" checked={action.take_break} onChange={e => setAction(a => ({ ...a, take_break: e.target.checked }))} />
+                      <span className="toggle-slider" />
+                    </label>
+                    <span className="toggle-label">Insert calming break</span>
+                    <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>
+                      −0.14 stress / −0.10 fatigue
+                    </span>
+                  </div>
+
+                  <button className="btn-step" onClick={handleStep} disabled={loading || obs.done}>
+                    {loading ? <><span className="spinner" />Stepping...</> : `→ Take Step ${obs.step + 1}`}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── RIGHT: Trajectory ── */}
+        <div className="panel">
+          <div className="panel-title">Trajectory</div>
+          {trajectory.length === 0 ? (
+            <div className="empty" style={{ height: 120 }}>
+              <div className="empty-icon" style={{ fontSize: 20 }}>—</div>
+              <div>no steps yet</div>
+            </div>
+          ) : (
+            trajectory.map((t, i) => (
+              <div key={i} className="traj-item">
+                <div className="traj-step">
+                  <span className="traj-num">step {t.step}</span>
+                  <span className="traj-reward" style={{ color: t.reward >= 0 ? 'var(--accent2)' : 'var(--danger)' }}>
+                    {t.reward > 0 ? '+' : ''}{t.reward.toFixed(3)}
+                  </span>
+                </div>
+                <div className="traj-details">
+                  stress: <span style={{ color: stressColor(t.stress) }}>{(t.stress * 100).toFixed(0)}%</span>
+                  {'  '} engage: {(t.engagement * 100).toFixed(0)}%<br />
+                  {t.action.content_type} · diff:{t.action.difficulty} · {t.action.pace}
+                  {t.action.take_break && <span style={{ color: 'var(--accent)' }}> · break</span>}
+                  {t.subject && <span style={{ color: 'var(--muted)' }}> · {t.subject}</span>}
+                  {'  '}{t.correct === true ? <span style={{ color: 'var(--accent2)' }}>✓</span> : t.correct === false ? <span style={{ color: 'var(--danger)' }}>✗</span> : <span style={{ color: 'var(--muted)' }}>—</span>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

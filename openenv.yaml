@@ -1,0 +1,154 @@
+name: neuroadapt-env
+version: 1.0.0
+description: >
+  NeuroAdapt is a real-world OpenEnv environment for sensory-aware tutoring.
+  An AI agent acts like an adaptive classroom support system for an autistic learner,
+  adjusting modality, pace, accessibility settings, hints, breaks, and subject rotation
+  to maximize learning while preventing sensory overload.
+
+author: NeuroAdapt contributors
+license: MIT
+
+tags:
+  - openenv
+  - real-world
+  - education
+  - accessibility
+  - adaptive-learning
+  - autism
+  - tutoring
+  - healthcare
+
+interface:
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
+  metadata: GET /metadata
+  schema: GET /schema
+  mcp: POST /mcp
+  health: GET /health
+  tasks: GET /tasks
+  grader: GET /grader
+  baseline: GET /baseline
+  websocket: WS /ws
+
+tasks:
+  - id: easy
+    name: Profile Matching
+    difficulty: easy
+    max_steps: 4
+    description: >
+      Keep engagement high and stress low during a short stable tutoring session
+      by using the learner profile hint and choosing safe presentation settings.
+    pass_threshold: 0.50
+
+  - id: medium
+    name: Distress Response
+    difficulty: medium
+    max_steps: 7
+    description: >
+      Detect and recover from a noisy mid-session transition while maintaining
+      meaningful learning progress and avoiding break-spam.
+    pass_threshold: 0.45
+
+  - id: hard
+    name: Full Session Optimization
+    difficulty: hard
+    max_steps: 12
+    description: >
+      Manage a full tutoring session with fatigue, subject switching, and late-session
+      stress while maximizing learning and demonstrating sustained adaptation.
+    pass_threshold: 0.40
+
+action_space:
+  type: object
+  properties:
+    content_type:
+      type: string
+      enum: [text, visual, audio, mixed]
+    difficulty:
+      type: integer
+      minimum: 1
+      maximum: 5
+    pace:
+      type: string
+      enum: [slow, normal, fast]
+    hint_level:
+      type: integer
+      minimum: 0
+      maximum: 3
+    take_break:
+      type: boolean
+    font_size:
+      type: integer
+      minimum: 12
+      maximum: 24
+    contrast_mode:
+      type: string
+      enum: [normal, high, low]
+    animation_speed:
+      type: string
+      enum: [none, slow, normal, fast]
+    subject:
+      type: string
+      enum: [math, reading, science, life_skills]
+      nullable: true
+
+observation_space:
+  type: object
+  properties:
+    stress_signal:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    engagement:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    response_time_norm:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    error_rate:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    last_correct:
+      type: boolean
+      nullable: true
+    step:
+      type: integer
+    done:
+      type: boolean
+    reward:
+      type: number
+      nullable: true
+    profile_hint:
+      type: string
+    metadata:
+      type: object
+      description: >
+        Includes current_question, question_preferred_modality, session_phase,
+        context_note, steps_remaining, and termination_reason when applicable.
+
+reward_function: >
+  reward = 0.38 * learning_delta
+         + 0.24 * (1 - stress)
+         + 0.18 * engagement
+         + 0.10 * correctness_bonus
+         + 0.10 * stress_regulation_bonus
+         - 0.15 * (stress ^ 1.5)
+         - repetition_penalty
+         - break_spam_penalty
+
+docker:
+  port: 7860
+  base_image: python:3.11-slim
+  build_context: .
+  dockerfile: Dockerfile
+
+hf_space:
+  sdk: docker
+  app_port: 7860
+  tags:
+    - openenv
