@@ -12,10 +12,11 @@ from openai import OpenAI
 from models import Action, Observation
 
 # Required env configuration for submission validators.
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-HF_TOKEN = os.getenv("HF_TOKEN")
-API_KEY = HF_TOKEN or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")  # set your active endpoint
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")             # set your active model
+HF_TOKEN = os.getenv("HF_TOKEN")                                               # optional if using from_docker_image()
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")                               # optional: local Docker image name
+API_KEY = HF_TOKEN or os.getenv("OPENAI_API_KEY")
 
 # URL of the running NeuroAdapt environment server (HF Space or local Docker).
 # PING_URL is injected by the OpenEnv submission validator; ENV_URL for manual runs.
