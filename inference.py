@@ -22,7 +22,7 @@ API_KEY = HF_TOKEN or os.getenv("OPENAI_API_KEY")
 # PING_URL is injected by the OpenEnv submission validator; ENV_URL for manual runs.
 ENV_URL = os.getenv("PING_URL") or os.getenv("ENV_URL") or "http://localhost:7860"
 
-TASK_NAME = os.getenv("MY_ENV_V4_TASK") or os.getenv("TASK_NAME") or "easy"
+TASK_NAME = os.getenv("MY_ENV_V4_TASK") or os.getenv("TASK_NAME") or ""
 BENCHMARK = os.getenv("MY_ENV_V4_BENCHMARK", "neuroadapt-env")
 TEMPERATURE = 0.0
 MAX_TOKENS = 220
@@ -424,9 +424,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--task",
-        choices=list(VALID_TASKS),
-        default=TASK_NAME if TASK_NAME in VALID_TASKS else "easy",
-        help="Task to run.",
+        choices=list(VALID_TASKS) + ["all"],
+        default=TASK_NAME if TASK_NAME in VALID_TASKS else "all",
+        help="Task to run, or 'all' to run all three tasks (default when no TASK_NAME is set).",
     )
     args = parser.parse_args()
 
@@ -436,7 +436,11 @@ def main() -> None:
     if mode == "llm" and (not API_KEY or not MODEL_NAME):
         mode = "heuristic"
 
-    run_task(task_id=args.task, mode=mode)
+    if args.task == "all":
+        for task_id in VALID_TASKS:
+            run_task(task_id=task_id, mode=mode)
+    else:
+        run_task(task_id=args.task, mode=mode)
 
 
 if __name__ == "__main__":
