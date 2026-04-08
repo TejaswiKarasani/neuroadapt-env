@@ -15,7 +15,7 @@ class Grader:
             return self._grade_medium(state)
         elif task_id == "hard":
             return self._grade_hard(state)
-        return GraderResult(task_id=task_id, score=0.0, breakdown={}, passed=False)
+        return GraderResult(task_id=task_id, score=0.001, breakdown={}, passed=False)
 
     # ── Task 1: Profile Matching (Easy, 4 steps) ─────────────────────── #
     def _grade_easy(self, state: State) -> GraderResult:
@@ -31,7 +31,7 @@ class Grader:
         """
         traj = state.trajectory
         if not traj:
-            return GraderResult(task_id="easy", score=0.0, breakdown={}, passed=False)
+            return GraderResult(task_id="easy", score=0.001, breakdown={}, passed=False)
 
         n = len(traj)
         engagement_score = sum(1 for t in traj if t["engagement"] >= 0.55) / n
@@ -48,7 +48,7 @@ class Grader:
             + 0.20 * correct_rate
             + 0.10 * variety_score
         )
-        score = round(max(0.0, min(1.0, score)), 4)
+        score = round(max(0.001, min(0.999, score)), 4)
         return GraderResult(
             task_id="easy",
             score=score,
@@ -84,7 +84,7 @@ class Grader:
         """
         traj = state.trajectory
         if not traj:
-            return GraderResult(task_id="medium", score=0.0, breakdown={}, passed=False)
+            return GraderResult(task_id="medium", score=0.001, breakdown={}, passed=False)
 
         stresses  = [t["stress"]   for t in traj]
         learnings = [t["learning"] for t in traj]
@@ -139,7 +139,7 @@ class Grader:
         if avg_learning < 0.04:
             score *= 0.55
 
-        score = round(max(0.0, min(1.0, score)), 4)
+        score = round(max(0.001, min(0.999, score)), 4)
         return GraderResult(
             task_id="medium",
             score=score,
@@ -173,7 +173,7 @@ class Grader:
         """
         traj = state.trajectory
         if not traj:
-            return GraderResult(task_id="hard", score=0.0, breakdown={}, passed=False)
+            return GraderResult(task_id="hard", score=0.001, breakdown={}, passed=False)
 
         n = len(traj)
         stresses    = [t["stress"]     for t in traj]
@@ -230,7 +230,7 @@ class Grader:
             + 0.07 * variety_score
             - overload_penalty
         )
-        score = round(max(0.0, min(1.0, score)), 4)
+        score = round(max(0.001, min(0.999, score)), 4)
         return GraderResult(
             task_id="hard",
             score=score,
